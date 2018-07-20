@@ -19,6 +19,7 @@ convnet/
 decaf/
 submission/
 darknet
+tags
 .fuse*
 
 # OS Generated #
