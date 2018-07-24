@@ -5,6 +5,10 @@
 #include <stdio.h>
 #include <math.h>
 
+#if OPENBLAS
+#include <cblas.h>
+#endif
+
 void gemm_bin(int M, int N, int K, float ALPHA, 
         char  *A, int lda, 
         float *B, int ldb,
@@ -68,7 +72,12 @@ void gemm(int TA, int TB, int M, int N, int K, float ALPHA,
         float BETA,
         float *C, int ldc)
 {
-    gemm_cpu( TA,  TB,  M, N, K, ALPHA,A,lda, B, ldb,BETA,C,ldc);
+#if OPENBLAS
+	cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, ALPHA, A, lda, B, ldb, BETA, C, ldc);
+#else
+    gemm_cpu(TA, TB, M, N, K, ALPHA, A, lda, B, ldb, BETA, C, ldc);
+#endif
+	
 }
 
 void gemm_nn(int M, int N, int K, float ALPHA, 
