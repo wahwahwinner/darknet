@@ -4,7 +4,7 @@
 #include "network.h"
 #include "image.h"
 #include "data.h"
-#include "utils.h"
+#include "./tools/utils.h"
 #include "blas.h"
 
 #include "crop_layer.h"

@@ -206,7 +206,6 @@ void run_detector(int argc, char **argv) {
         return;
     }
     char *gpu_list = find_char_arg(argc, argv, "-gpus", 0);
-    char *outfile = find_char_arg(argc, argv, "-out", 0);
     int *gpus = 0;
     int gpu = 0;
     int ngpus = 0;

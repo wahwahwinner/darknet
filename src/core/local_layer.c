@@ -1,5 +1,5 @@
 #include "local_layer.h"
-#include "utils.h"
+#include "./tools/utils.h"
 #include "im2col.h"
 #include "col2im.h"
 #include "blas.h"

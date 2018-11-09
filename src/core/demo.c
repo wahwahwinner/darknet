@@ -2,7 +2,7 @@
 #include "detection_layer.h"
 #include "region_layer.h"
 #include "cost_layer.h"
-#include "utils.h"
+#include "./tools/utils.h"
 #include "parser.h"
 #include "box.h"
 #include "image.h"

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "tree.h"
 #include "utils.h"
-#include "data.h"
+#include "./core/data.h"
 
 void change_leaves(tree *t, char *leaf_list)
 {

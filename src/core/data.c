@@ -1,5 +1,5 @@
 #include "data.h"
-#include "utils.h"
+#include "./tools/utils.h"
 #include "image.h"
 #include "cuda.h"
 

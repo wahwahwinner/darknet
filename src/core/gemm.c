@@ -1,5 +1,5 @@
 #include "gemm.h"
-#include "utils.h"
+#include "./tools/utils.h"
 #include "cuda.h"
 #include <stdlib.h>
 #include <stdio.h>

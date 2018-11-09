@@ -4,9 +4,9 @@
 
 #include "darknet.h"
 #include "matrix.h"
-#include "list.h"
+#include "./tools/list.h"
 #include "image.h"
-#include "tree.h"
+#include "./tools/tree.h"
 
 static inline float distance_from_edge(int x, int max)
 {
