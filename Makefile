@@ -14,7 +14,7 @@ ARCH= -gencode arch=compute_30,code=sm_30 \
 # This is what I use, uncomment if you know your arch and want to specify
 # ARCH= -gencode arch=compute_52,code=compute_52
 
-VPATH=./src/:./examples
+VPATH=./src/core/:./src/examples:./src/tools
 SLIB=libdarknet.so
 ALIB=libdarknet.a
 EXEC=darknet
@@ -35,7 +35,7 @@ CFLAGS+= -fopenmp
 endif
 
 ifeq ($(DEBUG), 1) 
-OPTS=-O0 -g
+OPTS=-O4 -g
 endif
 
 CFLAGS+=$(OPTS)
