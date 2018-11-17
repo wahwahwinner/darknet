@@ -45,6 +45,9 @@ static int demo_done = 0;
 static int demo_total = 0;
 double demo_time;
 
+//
+int frame_cycle = 30/(1000.f/25);
+
 detection *get_network_boxes(network *net, int w, int h, float thresh, float hier, int *map, int relative, int *num);
 
 void sig_int(int signo)
@@ -164,11 +167,22 @@ void *fetch_in_thread(void *ptr)
     printf("start fetch thread ...\n");
     free_image(buff[buff_index]);
     printf("fetch buff[%d]\n",buff_index);
-    buff[buff_index] = get_image_from_stream(cap);
-    if(buff[buff_index].data == 0) {
-        demo_done = 1;
-        return 0;
+
+    image img_frame;
+	int frame_index = 0;
+	while(true){
+        img_frame = get_image_from_stream(cap);
+        if(img_frame.data == 0) {
+             demo_done = 1;
+             return 0;
+        }
+        frame_index++;
+        if(frame_index > frame_cycle) {
+            break;
+        }
     }
+    //buff[buff_index] = get_image_from_stream(cap);
+    buff[buff_index] = img_frame;
     letterbox_image_into(buff[buff_index], net->w, net->h, buff_letter[buff_index]);
 	printf("end fetch thread ...\n");
     return 0;
