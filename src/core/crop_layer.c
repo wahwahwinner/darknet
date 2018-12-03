@@ -2,8 +2,7 @@
 #include "cuda.h"
 #include <stdio.h>
 
-image get_crop_image(crop_layer l)
-{
+image get_crop_image(crop_layer l) {
     int h = l.out_h;
     int w = l.out_w;
     int c = l.out_c;
@@ -13,8 +12,7 @@ image get_crop_image(crop_layer l)
 void backward_crop_layer(const crop_layer l, network net){}
 void backward_crop_layer_gpu(const crop_layer l, network net){}
 
-crop_layer make_crop_layer(int batch, int h, int w, int c, int crop_height, int crop_width, int flip, float angle, float saturation, float exposure)
-{
+crop_layer make_crop_layer(int batch, int h, int w, int c, int crop_height, int crop_width, int flip, float angle, float saturation, float exposure) {
     fprintf(stderr, "Crop Layer: %d x %d -> %d x %d x %d image\n", h,w,crop_height,crop_width,c);
     crop_layer l = {0};
     l.type = CROP;
@@ -45,8 +43,7 @@ crop_layer make_crop_layer(int batch, int h, int w, int c, int crop_height, int 
     return l;
 }
 
-void resize_crop_layer(layer *l, int w, int h)
-{
+void resize_crop_layer(layer *l, int w, int h) {
     l->w = w;
     l->h = h;
 
@@ -63,9 +60,7 @@ void resize_crop_layer(layer *l, int w, int h)
     #endif
 }
 
-
-void forward_crop_layer(const crop_layer l, network net)
-{
+void forward_crop_layer(const crop_layer l, network net) {
     int i,j,c,b,row,col;
     int index;
     int count = 0;
@@ -74,22 +69,22 @@ void forward_crop_layer(const crop_layer l, network net)
     int dw = rand()%(l.w - l.out_w + 1);
     float scale = 2;
     float trans = -1;
-    if(l.noadjust){
+    if(l.noadjust) {
         scale = 1;
         trans = 0;
     }
-    if(!net.train){
+    if(!net.train) {
         flip = 0;
         dh = (l.h - l.out_h)/2;
         dw = (l.w - l.out_w)/2;
     }
-    for(b = 0; b < l.batch; ++b){
-        for(c = 0; c < l.c; ++c){
-            for(i = 0; i < l.out_h; ++i){
-                for(j = 0; j < l.out_w; ++j){
-                    if(flip){
+    for(b=0; b<l.batch; ++b) {
+        for(c=0; c<l.c; ++c) {
+            for(i=0; i<l.out_h; ++i) {
+                for(j=0; j<l.out_w; ++j) {
+                    if(flip) {
                         col = l.w - dw - j - 1;    
-                    }else{
+                    } else {
                         col = j + dw;
                     }
                     row = i + dh;
@@ -100,4 +95,3 @@ void forward_crop_layer(const crop_layer l, network net)
         }
     }
 }
-

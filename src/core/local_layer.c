@@ -7,24 +7,21 @@
 #include <stdio.h>
 #include <time.h>
 
-int local_out_height(local_layer l)
-{
+int local_out_height(local_layer l) {
     int h = l.h;
     if (!l.pad) h -= l.size;
     else h -= 1;
     return h/l.stride + 1;
 }
 
-int local_out_width(local_layer l)
-{
+int local_out_width(local_layer l) {
     int w = l.w;
     if (!l.pad) w -= l.size;
     else w -= 1;
     return w/l.stride + 1;
 }
 
-local_layer make_local_layer(int batch, int h, int w, int c, int n, int size, int stride, int pad, ACTIVATION activation)
-{
+local_layer make_local_layer(int batch, int h, int w, int c, int n, int size, int stride, int pad, ACTIVATION activation) {
     int i;
     local_layer l = {0};
     l.type = LOCAL;
@@ -55,7 +52,7 @@ local_layer make_local_layer(int batch, int h, int w, int c, int n, int size, in
 
     // float scale = 1./sqrt(size*size*c);
     float scale = sqrt(2./(size*size*c));
-    for(i = 0; i < c*n*size*size; ++i) l.weights[i] = scale*rand_uniform(-1,1);
+    for(i=0; i<c*n*size*size; ++i) l.weights[i] = scale*rand_uniform(-1,1);
 
     l.output = calloc(l.batch*out_h * out_w * n, sizeof(float));
     l.delta  = calloc(l.batch*out_h * out_w * n, sizeof(float));
@@ -88,23 +85,21 @@ local_layer make_local_layer(int batch, int h, int w, int c, int n, int size, in
     return l;
 }
 
-void forward_local_layer(const local_layer l, network net)
-{
+void forward_local_layer(const local_layer l, network net) {
     int out_h = local_out_height(l);
     int out_w = local_out_width(l);
     int i, j;
     int locations = out_h * out_w;
 
-    for(i = 0; i < l.batch; ++i){
+    for(i=0; i<l.batch; ++i) {
         copy_cpu(l.outputs, l.biases, 1, l.output + i*l.outputs, 1);
     }
 
-    for(i = 0; i < l.batch; ++i){
+    for(i=0; i<l.batch; ++i) {
         float *input = net.input + i*l.w*l.h*l.c;
-        im2col_cpu(input, l.c, l.h, l.w, 
-                l.size, l.stride, l.pad, net.workspace);
+        im2col_cpu(input, l.c, l.h, l.w, l.size, l.stride, l.pad, net.workspace);
         float *output = l.output + i*l.outputs;
-        for(j = 0; j < locations; ++j){
+        for(j=0; j<locations; ++j) {
             float *a = l.weights + j*l.size*l.size*l.c*l.n;
             float *b = net.workspace + j;
             float *c = output + j;
@@ -119,23 +114,21 @@ void forward_local_layer(const local_layer l, network net)
     activate_array(l.output, l.outputs*l.batch, l.activation);
 }
 
-void backward_local_layer(local_layer l, network net)
-{
+void backward_local_layer(local_layer l, network net) {
     int i, j;
     int locations = l.out_w*l.out_h;
 
     gradient_array(l.output, l.outputs*l.batch, l.activation, l.delta);
 
-    for(i = 0; i < l.batch; ++i){
+    for(i=0; i<l.batch; ++i) {
         axpy_cpu(l.outputs, 1, l.delta + i*l.outputs, 1, l.bias_updates, 1);
     }
 
-    for(i = 0; i < l.batch; ++i){
+    for(i=0; i<l.batch; ++i) {
         float *input = net.input + i*l.w*l.h*l.c;
-        im2col_cpu(input, l.c, l.h, l.w, 
-                l.size, l.stride, l.pad, net.workspace);
+        im2col_cpu(input, l.c, l.h, l.w, l.size, l.stride, l.pad, net.workspace);
 
-        for(j = 0; j < locations; ++j){ 
+        for(j=0; j<locations; ++j) { 
             float *a = l.delta + i*l.outputs + j;
             float *b = net.workspace + j;
             float *c = l.weight_updates + j*l.size*l.size*l.c*l.n;
@@ -146,8 +139,8 @@ void backward_local_layer(local_layer l, network net)
             gemm(0,1,m,n,k,1,a,locations,b,locations,1,c,n);
         }
 
-        if(net.delta){
-            for(j = 0; j < locations; ++j){ 
+        if(net.delta) {
+            for(j=0; j<locations; ++j) { 
                 float *a = l.weights + j*l.size*l.size*l.c*l.n;
                 float *b = l.delta + i*l.outputs + j;
                 float *c = net.workspace + j;
@@ -164,8 +157,7 @@ void backward_local_layer(local_layer l, network net)
     }
 }
 
-void update_local_layer(local_layer l, update_args a)
-{
+void update_local_layer(local_layer l, update_args a) {
     float learning_rate = a.learning_rate*l.learning_rate_scale;
     float momentum = a.momentum;
     float decay = a.decay;
@@ -183,23 +175,21 @@ void update_local_layer(local_layer l, update_args a)
 
 #ifdef GPU
 
-void forward_local_layer_gpu(const local_layer l, network net)
-{
+void forward_local_layer_gpu(const local_layer l, network net) {
     int out_h = local_out_height(l);
     int out_w = local_out_width(l);
     int i, j;
     int locations = out_h * out_w;
 
-    for(i = 0; i < l.batch; ++i){
+    for(i=0; i<l.batch; ++i) {
         copy_gpu(l.outputs, l.biases_gpu, 1, l.output_gpu + i*l.outputs, 1);
     }
 
-    for(i = 0; i < l.batch; ++i){
+    for(i=0; i<l.batch; ++i) {
         float *input = net.input_gpu + i*l.w*l.h*l.c;
-        im2col_gpu(input, l.c, l.h, l.w, 
-                l.size, l.stride, l.pad, net.workspace);
+        im2col_gpu(input, l.c, l.h, l.w, l.size, l.stride, l.pad, net.workspace);
         float *output = l.output_gpu + i*l.outputs;
-        for(j = 0; j < locations; ++j){
+        for(j=0; j<locations; ++j) {
             float *a = l.weights_gpu + j*l.size*l.size*l.c*l.n;
             float *b = net.workspace + j;
             float *c = output + j;
@@ -214,22 +204,20 @@ void forward_local_layer_gpu(const local_layer l, network net)
     activate_array_gpu(l.output_gpu, l.outputs*l.batch, l.activation);
 }
 
-void backward_local_layer_gpu(local_layer l, network net)
-{
+void backward_local_layer_gpu(local_layer l, network net) {
     int i, j;
     int locations = l.out_w*l.out_h;
 
     gradient_array_gpu(l.output_gpu, l.outputs*l.batch, l.activation, l.delta_gpu);
-    for(i = 0; i < l.batch; ++i){
+    for(i=0; i<l.batch; ++i) {
         axpy_gpu(l.outputs, 1, l.delta_gpu + i*l.outputs, 1, l.bias_updates_gpu, 1);
     }
 
-    for(i = 0; i < l.batch; ++i){
+    for(i=0; i<l.batch; ++i) {
         float *input = net.input_gpu + i*l.w*l.h*l.c;
-        im2col_gpu(input, l.c, l.h, l.w, 
-                l.size, l.stride, l.pad, net.workspace);
+        im2col_gpu(input, l.c, l.h, l.w,l.size, l.stride, l.pad, net.workspace);
 
-        for(j = 0; j < locations; ++j){ 
+        for(j=0; j<locations; ++j) { 
             float *a = l.delta_gpu + i*l.outputs + j;
             float *b = net.workspace + j;
             float *c = l.weight_updates_gpu + j*l.size*l.size*l.c*l.n;
@@ -240,8 +228,8 @@ void backward_local_layer_gpu(local_layer l, network net)
             gemm_gpu(0,1,m,n,k,1,a,locations,b,locations,1,c,n);
         }
 
-        if(net.delta_gpu){
-            for(j = 0; j < locations; ++j){ 
+        if(net.delta_gpu) {
+            for(j=0; j<locations; ++j) { 
                 float *a = l.weights_gpu + j*l.size*l.size*l.c*l.n;
                 float *b = l.delta_gpu + i*l.outputs + j;
                 float *c = net.workspace + j;
@@ -258,8 +246,7 @@ void backward_local_layer_gpu(local_layer l, network net)
     }
 }
 
-void update_local_layer_gpu(local_layer l, update_args a)
-{
+void update_local_layer_gpu(local_layer l, update_args a) {
     float learning_rate = a.learning_rate*l.learning_rate_scale;
     float momentum = a.momentum;
     float decay = a.decay;
@@ -275,16 +262,14 @@ void update_local_layer_gpu(local_layer l, update_args a)
     scal_gpu(size, momentum, l.weight_updates_gpu, 1);
 }
 
-void pull_local_layer(local_layer l)
-{
+void pull_local_layer(local_layer l) {
     int locations = l.out_w*l.out_h;
     int size = l.size*l.size*l.c*l.n*locations;
     cuda_pull_array(l.weights_gpu, l.weights, size);
     cuda_pull_array(l.biases_gpu, l.biases, l.outputs);
 }
 
-void push_local_layer(local_layer l)
-{
+void push_local_layer(local_layer l) {
     int locations = l.out_w*l.out_h;
     int size = l.size*l.size*l.c*l.n*locations;
     cuda_push_array(l.weights_gpu, l.weights, size);

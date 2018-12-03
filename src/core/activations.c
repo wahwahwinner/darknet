@@ -5,8 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-char *get_activation_string(ACTIVATION a)
-{
+char *get_activation_string(ACTIVATION a) {
     switch(a){
         case LOGISTIC:
             return "logistic";
@@ -42,8 +41,7 @@ char *get_activation_string(ACTIVATION a)
     return "relu";
 }
 
-ACTIVATION get_activation(char *s)
-{
+ACTIVATION get_activation(char *s) {
     if (strcmp(s, "logistic")==0) return LOGISTIC;
     if (strcmp(s, "loggy")==0) return LOGGY;
     if (strcmp(s, "relu")==0) return RELU;
@@ -62,8 +60,7 @@ ACTIVATION get_activation(char *s)
     return RELU;
 }
 
-float activate(float x, ACTIVATION a)
-{
+float activate(float x, ACTIVATION a) {
     switch(a){
         case LINEAR:
             return linear_activate(x);
@@ -97,16 +94,14 @@ float activate(float x, ACTIVATION a)
     return 0;
 }
 
-void activate_array(float *x, const int n, const ACTIVATION a)
-{
+void activate_array(float *x, const int n, const ACTIVATION a) {
     int i;
-    for(i = 0; i < n; ++i){
+    for(i=0; i<n; ++i) {
         x[i] = activate(x[i], a);
     }
 }
 
-float gradient(float x, ACTIVATION a)
-{
+float gradient(float x, ACTIVATION a) {
     switch(a){
         case LINEAR:
             return linear_gradient(x);
@@ -140,11 +135,9 @@ float gradient(float x, ACTIVATION a)
     return 0;
 }
 
-void gradient_array(const float *x, const int n, const ACTIVATION a, float *delta)
-{
+void gradient_array(const float *x, const int n, const ACTIVATION a, float *delta) {
     int i;
-    for(i = 0; i < n; ++i){
+    for(i=0; i<n; ++i) {
         delta[i] *= gradient(x[i], a);
     }
 } 
-

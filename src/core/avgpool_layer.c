@@ -2,9 +2,8 @@
 #include "cuda.h"
 #include <stdio.h>
 
-avgpool_layer make_avgpool_layer(int batch, int w, int h, int c)
-{
-    fprintf(stderr, "avg                     %4d x%4d x%4d   ->  %4d\n",  w, h, c, c);
+avgpool_layer make_avgpool_layer(int batch, int w, int h, int c) {
+    fprintf(stderr, "avg  %4d x%4d x%4d  ->  %4d\n",  w, h, c, c);
     avgpool_layer l = {0};
     l.type = AVGPOOL;
     l.batch = batch;
@@ -30,19 +29,17 @@ avgpool_layer make_avgpool_layer(int batch, int w, int h, int c)
     return l;
 }
 
-void resize_avgpool_layer(avgpool_layer *l, int w, int h)
-{
+void resize_avgpool_layer(avgpool_layer *l, int w, int h) {
     l->w = w;
     l->h = h;
     l->inputs = h*w*l->c;
 }
 
-void forward_avgpool_layer(const avgpool_layer l, network net)
-{
+void forward_avgpool_layer(const avgpool_layer l, network net) {
     int b,i,k;
 
-    for(b = 0; b < l.batch; ++b){
-        for(k = 0; k < l.c; ++k){
+    for(b=0; b<l.batch; ++b) {
+        for(k=0; k<l.c; ++k) {
             int out_index = k + b*l.c;
             l.output[out_index] = 0;
             for(i = 0; i < l.h*l.w; ++i){
@@ -54,18 +51,16 @@ void forward_avgpool_layer(const avgpool_layer l, network net)
     }
 }
 
-void backward_avgpool_layer(const avgpool_layer l, network net)
-{
+void backward_avgpool_layer(const avgpool_layer l, network net) {
     int b,i,k;
 
-    for(b = 0; b < l.batch; ++b){
-        for(k = 0; k < l.c; ++k){
+    for(b=0; b<l.batch; ++b) {
+        for(k=0; k<l.c; ++k) {
             int out_index = k + b*l.c;
-            for(i = 0; i < l.h*l.w; ++i){
+            for(i=0; i<l.h*l.w; ++i) {
                 int in_index = i + l.h*l.w*(k + b*l.c);
                 net.delta[in_index] += l.delta[out_index] / (l.h*l.w);
             }
         }
     }
 }
-

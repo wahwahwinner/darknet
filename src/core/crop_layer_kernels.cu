@@ -9,14 +9,12 @@ extern "C" {
 #include "image.h"
 }
 
-__device__ float get_pixel_kernel(float *image, int w, int h, int x, int y, int c)
-{
+__device__ float get_pixel_kernel(float *image, int w, int h, int x, int y, int c) {
     if(x < 0 || x >= w || y < 0 || y >= h) return 0;
     return image[x + w*(y + c*h)];
 }
 
-__device__ float3 rgb_to_hsv_kernel(float3 rgb)
-{
+__device__ float3 rgb_to_hsv_kernel(float3 rgb) {
     float r = rgb.x;
     float g = rgb.y; 
     float b = rgb.z;
@@ -26,12 +24,12 @@ __device__ float3 rgb_to_hsv_kernel(float3 rgb)
     float min = (r < g) ? ( (r < b) ? r : b) : ( (g < b) ? g : b);
     float delta = max - min;
     v = max;
-    if(max == 0){
+    if(max == 0) {
         s = 0;
         h = -1;
-    }else{
+    } else {
         s = delta/max;
-        if(r == max){
+        if(r == max) {
             h = (g - b) / delta;
         } else if (g == max) {
             h = 2 + (b - r) / delta;
@@ -43,8 +41,7 @@ __device__ float3 rgb_to_hsv_kernel(float3 rgb)
     return make_float3(h, s, v);
 }
 
-__device__ float3 hsv_to_rgb_kernel(float3 hsv)
-{
+__device__ float3 hsv_to_rgb_kernel(float3 hsv) {
     float h = hsv.x;
     float s = hsv.y; 
     float v = hsv.z;
@@ -60,15 +57,15 @@ __device__ float3 hsv_to_rgb_kernel(float3 hsv)
         p = v*(1-s);
         q = v*(1-s*f);
         t = v*(1-s*(1-f));
-        if(index == 0){
+        if(index == 0) {
             r = v; g = t; b = p;
-        } else if(index == 1){
+        } else if(index == 1) {
             r = q; g = v; b = p;
-        } else if(index == 2){
+        } else if(index == 2) {
             r = p; g = v; b = t;
-        } else if(index == 3){
+        } else if(index == 3) {
             r = p; g = q; b = v;
-        } else if(index == 4){
+        } else if(index == 4) {
             r = t; g = p; b = v;
         } else {
             r = v; g = p; b = q;
@@ -80,8 +77,7 @@ __device__ float3 hsv_to_rgb_kernel(float3 hsv)
     return make_float3(r, g, b);
 }
 
-__device__ float bilinear_interpolate_kernel(float *image, int w, int h, float x, float y, int c)
-{
+__device__ float bilinear_interpolate_kernel(float *image, int w, int h, float x, float y, int c) {
     int ix = (int) floorf(x);
     int iy = (int) floorf(y);
 
@@ -95,8 +91,7 @@ __device__ float bilinear_interpolate_kernel(float *image, int w, int h, float x
     return val;
 }
 
-__global__ void levels_image_kernel(float *image, float *rand, int batch, int w, int h, int train, float saturation, float exposure, float translate, float scale, float shift)
-{
+__global__ void levels_image_kernel(float *image, float *rand, int batch, int w, int h, int train, float saturation, float exposure, float translate, float scale, float shift) {
     int size = batch * w * h;
     int id = (blockIdx.x + blockIdx.y*gridDim.x) * blockDim.x + threadIdx.x;
     if(id >= size) return;
@@ -123,7 +118,7 @@ __global__ void levels_image_kernel(float *image, float *rand, int batch, int w,
     float g = image[x + w*(y + h*1)];
     float b = image[x + w*(y + h*2)];
     float3 rgb = make_float3(r,g,b);
-    if(train){
+    if(train) {
         float3 hsv = rgb_to_hsv_kernel(rgb);
         hsv.y *= saturation;
         hsv.z *= exposure;
@@ -136,8 +131,7 @@ __global__ void levels_image_kernel(float *image, float *rand, int batch, int w,
     image[x + w*(y + h*2)] = rgb.z*scale + translate + (bshift - .5f)*shift;
 }
 
-__global__ void forward_crop_layer_kernel(float *input, float *rand, int size, int c, int h, int w, int crop_height, int crop_width, int train, int flip, float angle, float *output)
-{
+__global__ void forward_crop_layer_kernel(float *input, float *rand, int size, int c, int h, int w, int crop_height, int crop_width, int train, int flip, float angle, float *output) {
     int id = (blockIdx.x + blockIdx.y*gridDim.x) * blockDim.x + threadIdx.x;
     if(id >= size) return;
 
@@ -162,7 +156,7 @@ __global__ void forward_crop_layer_kernel(float *input, float *rand, int size, i
     float dh = (h - crop_height)*r5;
     flip = (flip && (r6 > .5f));
     angle = 2*angle*r7 - angle;
-    if(!train){
+    if(!train) {
         dw = (w - crop_width)/2.f;
         dh = (h - crop_height)/2.f;
         flip = 0;
@@ -180,15 +174,14 @@ __global__ void forward_crop_layer_kernel(float *input, float *rand, int size, i
     output[count] = bilinear_interpolate_kernel(input, w, h, rx, ry, k);
 }
 
-extern "C" void forward_crop_layer_gpu(crop_layer layer, network net)
-{
+extern "C" void forward_crop_layer_gpu(crop_layer layer, network net) {
     cuda_random(layer.rand_gpu, layer.batch*8);
 
     float radians = layer.angle*3.14159265f/180.f;
 
     float scale = 2;
     float translate = -1;
-    if(layer.noadjust){
+    if(layer.noadjust) {
         scale = 1;
         translate = 0;
     }
@@ -222,4 +215,3 @@ extern "C" void forward_crop_layer_gpu(crop_layer layer, network net)
        cvWaitKey(0);
        */
 }
-

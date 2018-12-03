@@ -10,8 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void increment_layer(layer *l, int steps)
-{
+static void increment_layer(layer *l, int steps) {
     int num = l->outputs*l->batch*steps;
     l->output += num;
     l->delta += num;
@@ -26,8 +25,7 @@ static void increment_layer(layer *l, int steps)
 #endif
 }
 
-layer make_rnn_layer(int batch, int inputs, int outputs, int steps, ACTIVATION activation, int batch_normalize, int adam)
-{
+layer make_rnn_layer(int batch, int inputs, int outputs, int steps, ACTIVATION activation, int batch_normalize, int adam) {
     fprintf(stderr, "RNN Layer: %d inputs, %d outputs\n", inputs, outputs);
     batch = batch / steps;
     layer l = {0};
@@ -79,15 +77,13 @@ layer make_rnn_layer(int batch, int inputs, int outputs, int steps, ACTIVATION a
     return l;
 }
 
-void update_rnn_layer(layer l, update_args a)
-{
+void update_rnn_layer(layer l, update_args a) {
     update_connected_layer(*(l.input_layer),  a);
     update_connected_layer(*(l.self_layer),   a);
     update_connected_layer(*(l.output_layer), a);
 }
 
-void forward_rnn_layer(layer l, network net)
-{
+void forward_rnn_layer(layer l, network net) {
     network s = net;
     s.train = net.train;
     int i;
@@ -100,7 +96,7 @@ void forward_rnn_layer(layer l, network net)
     fill_cpu(l.outputs * l.batch * l.steps, 0, input_layer.delta, 1);
     if(net.train) fill_cpu(l.outputs * l.batch, 0, l.state, 1);
 
-    for (i = 0; i < l.steps; ++i) {
+    for (i=0; i<l.steps; ++i) {
         s.input = net.input;
         forward_connected_layer(input_layer, s);
 
@@ -109,9 +105,9 @@ void forward_rnn_layer(layer l, network net)
 
         float *old_state = l.state;
         if(net.train) l.state += l.outputs*l.batch;
-        if(l.shortcut){
+        if(l.shortcut) {
             copy_cpu(l.outputs * l.batch, old_state, 1, l.state, 1);
-        }else{
+        } else {
             fill_cpu(l.outputs * l.batch, 0, l.state, 1);
         }
         axpy_cpu(l.outputs * l.batch, 1, input_layer.output, 1, l.state, 1);
@@ -127,8 +123,7 @@ void forward_rnn_layer(layer l, network net)
     }
 }
 
-void backward_rnn_layer(layer l, network net)
-{
+void backward_rnn_layer(layer l, network net) {
     network s = net;
     s.train = net.train;
     int i;
@@ -141,7 +136,7 @@ void backward_rnn_layer(layer l, network net)
     increment_layer(&output_layer, l.steps-1);
 
     l.state += l.outputs*l.batch*l.steps;
-    for (i = l.steps-1; i >= 0; --i) {
+    for (i=l.steps-1; i>=0; --i) {
         copy_cpu(l.outputs * l.batch, input_layer.output, 1, l.state, 1);
         axpy_cpu(l.outputs * l.batch, 1, self_layer.output, 1, l.state, 1);
 
@@ -179,29 +174,25 @@ void backward_rnn_layer(layer l, network net)
 
 #ifdef GPU
 
-void pull_rnn_layer(layer l)
-{
+void pull_rnn_layer(layer l) {
     pull_connected_layer(*(l.input_layer));
     pull_connected_layer(*(l.self_layer));
     pull_connected_layer(*(l.output_layer));
 }
 
-void push_rnn_layer(layer l)
-{
+void push_rnn_layer(layer l) {
     push_connected_layer(*(l.input_layer));
     push_connected_layer(*(l.self_layer));
     push_connected_layer(*(l.output_layer));
 }
 
-void update_rnn_layer_gpu(layer l, update_args a)
-{
+void update_rnn_layer_gpu(layer l, update_args a) {
     update_connected_layer_gpu(*(l.input_layer),  a);
     update_connected_layer_gpu(*(l.self_layer),   a);
     update_connected_layer_gpu(*(l.output_layer), a);
 }
 
-void forward_rnn_layer_gpu(layer l, network net)
-{
+void forward_rnn_layer_gpu(layer l, network net) {
     network s = {0};
     s.train = net.train;
     int i;
@@ -218,7 +209,7 @@ void forward_rnn_layer_gpu(layer l, network net)
         copy_gpu(l.outputs*l.batch, l.state_gpu, 1, l.prev_state_gpu, 1);
     }
 
-    for (i = 0; i < l.steps; ++i) {
+    for (i=0; i<l.steps; ++i) {
         s.input_gpu = net.input_gpu;
         forward_connected_layer_gpu(input_layer, s);
 
@@ -239,8 +230,7 @@ void forward_rnn_layer_gpu(layer l, network net)
     }
 }
 
-void backward_rnn_layer_gpu(layer l, network net)
-{
+void backward_rnn_layer_gpu(layer l, network net) {
     network s = {0};
     s.train = net.train;
     int i;
@@ -252,7 +242,7 @@ void backward_rnn_layer_gpu(layer l, network net)
     increment_layer(&output_layer, l.steps - 1);
     float *last_input = input_layer.output_gpu;
     float *last_self = self_layer.output_gpu;
-    for (i = l.steps-1; i >= 0; --i) {
+    for (i=l.steps-1; i>=0; --i) {
         fill_gpu(l.outputs * l.batch, 0, l.state_gpu, 1);
         axpy_gpu(l.outputs * l.batch, 1, input_layer.output_gpu, 1, l.state_gpu, 1);
         axpy_gpu(l.outputs * l.batch, 1, self_layer.output_gpu, 1, l.state_gpu, 1);

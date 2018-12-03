@@ -10,8 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void increment_layer(layer *l, int steps)
-{
+static void increment_layer(layer *l, int steps) {
     int num = l->outputs*l->batch*steps;
     l->output += num;
     l->delta += num;
@@ -26,8 +25,7 @@ static void increment_layer(layer *l, int steps)
 #endif
 }
 
-layer make_lstm_layer(int batch, int inputs, int outputs, int steps, int batch_normalize, int adam)
-{
+layer make_lstm_layer(int batch, int inputs, int outputs, int steps, int batch_normalize, int adam) {
     fprintf(stderr, "LSTM Layer: %d inputs, %d outputs\n", inputs, outputs);
     batch = batch / steps;
     layer l = { 0 };
@@ -125,24 +123,22 @@ layer make_lstm_layer(int batch, int inputs, int outputs, int steps, int batch_n
     l.dc_gpu = cuda_make_array(0, batch*outputs);
     l.dh_gpu = cuda_make_array(0, batch*outputs);
 #ifdef CUDNN
-        cudnnSetTensor4dDescriptor(l.wf->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.wf->out_c, l.wf->out_h, l.wf->out_w); 
-        cudnnSetTensor4dDescriptor(l.wi->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.wi->out_c, l.wi->out_h, l.wi->out_w); 
-        cudnnSetTensor4dDescriptor(l.wg->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.wg->out_c, l.wg->out_h, l.wg->out_w); 
-        cudnnSetTensor4dDescriptor(l.wo->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.wo->out_c, l.wo->out_h, l.wo->out_w); 
+    cudnnSetTensor4dDescriptor(l.wf->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.wf->out_c, l.wf->out_h, l.wf->out_w); 
+    cudnnSetTensor4dDescriptor(l.wi->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.wi->out_c, l.wi->out_h, l.wi->out_w); 
+    cudnnSetTensor4dDescriptor(l.wg->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.wg->out_c, l.wg->out_h, l.wg->out_w); 
+    cudnnSetTensor4dDescriptor(l.wo->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.wo->out_c, l.wo->out_h, l.wo->out_w); 
 
-        cudnnSetTensor4dDescriptor(l.uf->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.uf->out_c, l.uf->out_h, l.uf->out_w); 
-        cudnnSetTensor4dDescriptor(l.ui->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.ui->out_c, l.ui->out_h, l.ui->out_w); 
-        cudnnSetTensor4dDescriptor(l.ug->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.ug->out_c, l.ug->out_h, l.ug->out_w); 
-        cudnnSetTensor4dDescriptor(l.uo->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.uo->out_c, l.uo->out_h, l.uo->out_w); 
+    cudnnSetTensor4dDescriptor(l.uf->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.uf->out_c, l.uf->out_h, l.uf->out_w); 
+    cudnnSetTensor4dDescriptor(l.ui->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.ui->out_c, l.ui->out_h, l.ui->out_w); 
+    cudnnSetTensor4dDescriptor(l.ug->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.ug->out_c, l.ug->out_h, l.ug->out_w); 
+    cudnnSetTensor4dDescriptor(l.uo->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.uo->out_c, l.uo->out_h, l.uo->out_w); 
 #endif
 
 #endif
-
     return l;
 }
 
-void update_lstm_layer(layer l, update_args a)
-{
+void update_lstm_layer(layer l, update_args a) {
     update_connected_layer(*(l.wf), a);
     update_connected_layer(*(l.wi), a);
     update_connected_layer(*(l.wg), a);
@@ -153,8 +149,7 @@ void update_lstm_layer(layer l, update_args a)
     update_connected_layer(*(l.uo), a);
 }
 
-void forward_lstm_layer(layer l, network state)
-{
+void forward_lstm_layer(layer l, network state) {
     network s = { 0 };
     s.train = state.train;
     int i;
@@ -181,7 +176,7 @@ void forward_lstm_layer(layer l, network state)
         fill_cpu(l.outputs * l.batch * l.steps, 0, l.delta, 1);
     }
 
-    for (i = 0; i < l.steps; ++i) {
+    for (i=0; i<l.steps; ++i) {
         s.input = l.h_cpu;
         forward_connected_layer(wf, s);							
         forward_connected_layer(wi, s);							
@@ -225,7 +220,7 @@ void forward_lstm_layer(layer l, network state)
 
         state.input += l.inputs*l.batch;
         l.output    += l.outputs*l.batch;
-        l.cell_cpu      += l.outputs*l.batch;
+        l.cell_cpu  += l.outputs*l.batch;
 
         increment_layer(&wf, 1);
         increment_layer(&wi, 1);
@@ -239,8 +234,7 @@ void forward_lstm_layer(layer l, network state)
     }
 }
 
-void backward_lstm_layer(layer l, network state)
-{
+void backward_lstm_layer(layer l, network state) {
     network s = { 0 };
     s.train = state.train;
     int i;
@@ -271,7 +265,7 @@ void backward_lstm_layer(layer l, network state)
     l.cell_cpu += l.outputs*l.batch*(l.steps - 1);
     l.delta += l.outputs*l.batch*(l.steps - 1);
 
-    for (i = l.steps - 1; i >= 0; --i) {
+    for (i=l.steps-1; i>=0; --i) {
         if (i != 0) copy_cpu(l.outputs*l.batch, l.cell_cpu - l.outputs*l.batch, 1, l.prev_cell_cpu, 1);
         copy_cpu(l.outputs*l.batch, l.cell_cpu, 1, l.c_cpu, 1);
         if (i != 0) copy_cpu(l.outputs*l.batch, l.output - l.outputs*l.batch, 1, l.prev_state_cpu, 1);
@@ -383,8 +377,7 @@ void backward_lstm_layer(layer l, network state)
 }
 
 #ifdef GPU
-void update_lstm_layer_gpu(layer l, update_args a)
-{
+void update_lstm_layer_gpu(layer l, update_args a) {
     update_connected_layer_gpu(*(l.wf), a);
     update_connected_layer_gpu(*(l.wi), a);
     update_connected_layer_gpu(*(l.wg), a);
@@ -395,8 +388,7 @@ void update_lstm_layer_gpu(layer l, update_args a)
     update_connected_layer_gpu(*(l.uo), a);
 }
 
-void forward_lstm_layer_gpu(layer l, network state)
-{
+void forward_lstm_layer_gpu(layer l, network state) {
     network s = { 0 };
     s.train = state.train;
     int i;
@@ -423,7 +415,7 @@ void forward_lstm_layer_gpu(layer l, network state)
         fill_gpu(l.outputs * l.batch * l.steps, 0, l.delta_gpu, 1);
     }
 
-    for (i = 0; i < l.steps; ++i) {
+    for (i=0; i<l.steps; ++i) {
         s.input_gpu = l.h_gpu;
         forward_connected_layer_gpu(wf, s);							
         forward_connected_layer_gpu(wi, s);							
@@ -481,8 +473,7 @@ void forward_lstm_layer_gpu(layer l, network state)
     }
 }
 
-void backward_lstm_layer_gpu(layer l, network state)
-{
+void backward_lstm_layer_gpu(layer l, network state) {
     network s = { 0 };
     s.train = state.train;
     int i;
@@ -513,7 +504,7 @@ void backward_lstm_layer_gpu(layer l, network state)
     l.cell_gpu += l.outputs*l.batch*(l.steps - 1);
     l.delta_gpu += l.outputs*l.batch*(l.steps - 1);
 
-    for (i = l.steps - 1; i >= 0; --i) {
+    for (i=l.steps-1; i>=0; --i) {
         if (i != 0) copy_gpu(l.outputs*l.batch, l.cell_gpu - l.outputs*l.batch, 1, l.prev_cell_gpu, 1);
         copy_gpu(l.outputs*l.batch, l.cell_gpu, 1, l.c_gpu, 1);
         if (i != 0) copy_gpu(l.outputs*l.batch, l.output_gpu - l.outputs*l.batch, 1, l.prev_state_gpu, 1);

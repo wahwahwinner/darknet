@@ -22,11 +22,9 @@
 #include "opencv2/videoio/videoio_c.h"
 
 static CvVideoWriter *video_writer;
-
 static char **demo_names;
 static image **demo_alphabet;
 static int demo_classes;
-
 static network *net;
 static image buff [3];
 static image buff_letter[3];
@@ -36,7 +34,6 @@ static float fps = 0;
 static float demo_thresh = 0;
 static float demo_hier = .5;
 static int running = 0;
-
 static int demo_frame = 3;
 static int demo_index = 0;
 static float **predictions;
@@ -45,57 +42,53 @@ static int demo_done = 0;
 static int demo_total = 0;
 double demo_time;
 
-//
+//the cycle when to pick a frame
 int frame_cycle = 30/(1000.f/25);
 
 detection *get_network_boxes(network *net, int w, int h, float thresh, float hier, int *map, int relative, int *num);
 
-void sig_int(int signo)
-{
-    printf("\nget intrrupt command. close videowriter.\n");
+void sig_int(int signo) {
+    printf("\n get intrrupt command. close videowriter.\n");
     if(video_writer) {
         cvReleaseVideoWriter(&video_writer);
     }
 	_exit(0);
 }
 
-int size_network(network *net)
-{
+int size_network(network *net) {
     int i;
     int count = 0;
-    for(i = 0; i < net->n; ++i){
+    for(i=0; i<net->n; ++i) {
         layer l = net->layers[i];
-        if(l.type == YOLO || l.type == REGION || l.type == DETECTION){
+        if(l.type==YOLO || l.type==REGION || l.type==DETECTION) {
             count += l.outputs;
         }
     }
     return count;
 }
 
-void remember_network(network *net)
-{
+void remember_network(network *net) {
     int i;
     int count = 0;
-    for(i = 0; i < net->n; ++i){
+    for(i=0; i<net->n; ++i) {
         layer l = net->layers[i];
-        if(l.type == YOLO || l.type == REGION || l.type == DETECTION){
+        if(l.type==YOLO || l.type==REGION || l.type==DETECTION) {
             memcpy(predictions[demo_index] + count, net->layers[i].output, sizeof(float) * l.outputs);
             count += l.outputs;
         }
     }
 }
 
-detection *avg_predictions(network *net, int *nboxes)
-{
+detection *avg_predictions(network *net, int *nboxes) {
     int i, j;
     int count = 0;
     fill_cpu(demo_total, 0, avg, 1);
-    for(j = 0; j < demo_frame; ++j){
+    for(j=0; j<demo_frame; ++j) {
         axpy_cpu(demo_total, 1./demo_frame, predictions[j], 1, avg, 1);
     }
-    for(i = 0; i < net->n; ++i){
+    for(i=0; i<net->n; ++i) {
         layer l = net->layers[i];
-        if(l.type == YOLO || l.type == REGION || l.type == DETECTION){
+        if(l.type==YOLO || l.type==REGION || l.type==DETECTION) {
             memcpy(l.output, avg + count, sizeof(float) * l.outputs);
             count += l.outputs;
         }
@@ -104,8 +97,7 @@ detection *avg_predictions(network *net, int *nboxes)
     return dets;
 }
 
-void *detect_in_thread(void *ptr)
-{
+void *detect_in_thread(void *ptr) {
     printf("start detect thread ...\n");
     running = 1;
     float nms = .4;
@@ -147,7 +139,6 @@ void *detect_in_thread(void *ptr)
      */
 
     if (nms > 0) do_nms_obj(dets, nboxes, l.classes, nms);
-
     //printf("\033[2J");
     //printf("\033[1;1H");
     printf("FPS:%.1f\n",fps);
@@ -162,15 +153,14 @@ void *detect_in_thread(void *ptr)
     return 0;
 }
 
-void *fetch_in_thread(void *ptr)
-{
+void *fetch_in_thread(void *ptr) {
     printf("start fetch thread ...\n");
     free_image(buff[buff_index]);
     printf("fetch buff[%d]\n",buff_index);
 
     image img_frame;
 	int frame_index = 0;
-	while(true){
+	while(true) {
         img_frame = get_image_from_stream(cap);
         if(img_frame.data == 0) {
              demo_done = 1;
@@ -188,8 +178,7 @@ void *fetch_in_thread(void *ptr)
     return 0;
 }
 
-void *display_in_thread(void *ptr)
-{
+void *display_in_thread(void *ptr) {
     printf("start display thread ...\n");
     int c = show_image(buff[(buff_index + 1)%3], "Demo", 1);
     printf("display buff[%d]\n",(buff_index+1)%3);
@@ -212,22 +201,20 @@ void *display_in_thread(void *ptr)
     return 0;
 }
 
-void *display_loop(void *ptr)
-{
+void *display_loop(void *ptr) {
     while(1){
         display_in_thread(0);
     }
 }
 
-void *detect_loop(void *ptr)
-{
-    while(1){
+void *detect_loop(void *ptr) {
+    while(1) {
         detect_in_thread(0);
     }
 }
 
-void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const char *filename, char **names, int classes, int delay, char *prefix, int avg_frames, float hier, int w, int h, int frames, int fullscreen)
-{
+void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const char *filename, char **names,
+          int classes, int delay, char *prefix, int avg_frames, float hier, int w, int h, int frames, int fullscreen) {
     //demo_frame = avg_frames;
     image **alphabet = load_alphabet();
     demo_names = names;
@@ -246,15 +233,15 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
     int i;
     demo_total = size_network(net);
     predictions = calloc(demo_frame, sizeof(float*));
-    for (i = 0; i < demo_frame; ++i){
+    for (i=0; i<demo_frame; ++i) {
         predictions[i] = calloc(demo_total, sizeof(float));
     }
     avg = calloc(demo_total, sizeof(float));
 
-    if(filename){
+    if(filename) {
         printf("video file: %s\n", filename);
         cap = open_video_stream(filename, 0, 0, 0, 0);
-    }else{
+    } else {
         cap = open_video_stream(0, cam_index, w, h, frames);
     }
 
@@ -280,7 +267,7 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
         video_writer = cvCreateVideoWriter(strcat(prefix,".avi"), CV_FOURCC('D', 'I', 'V', 'X'), 25, size, 1);
     }
 
-    while(!demo_done){
+    while(!demo_done) {
         buff_index = (buff_index + 1) %3;
         if(pthread_create(&fetch_thread, 0, fetch_in_thread, 0)) error("Thread creation failed");
         pthread_join(fetch_thread, 0);
@@ -294,20 +281,20 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
             pthread_join(detect_thread, 0);
             printf("save image buff[%d] to video \n", (buff_index+1)%3);
             cvWriteFrame(video_writer, image_to_ipl(buff[(buff_index+1)%3]));
-			//cvReleaseImage(&buff[(buff_index+1)%3]);
+            //cvReleaseImage(&buff[(buff_index+1)%3]);
         }
         ++count;
     }
 
-    if(video_writer){
+    if(video_writer) {
         cvReleaseVideoWriter(&video_writer);
         printf("video_writer closed\n");
     }
 }
 
 #else
-void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const char *filename, char **names, int classes, int delay, char *prefix, int avg, float hier, int w, int h, int frames, int fullscreen)
-{
+void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const char *filename, char **names, 
+          int classes, int delay, char *prefix, int avg, float hier, int w, int h, int frames, int fullscreen) {
     fprintf(stderr, "Demo needs OpenCV for webcam images.\n");
 }
 #endif
