@@ -731,7 +731,7 @@ void composite_3d(char *f1, char *f2, char *out, int delta) {
         b = swap;
         shift = -shift;
         printf("swapped, %d\n", shift);
-    } else{
+    } else {
         printf("%d\n", shift);
     }
 
@@ -1295,7 +1295,7 @@ image collapse_images_vert(image *ims, int n) {
         //normalize_image(copy);
         if(c==3 && color) {
             embed_image(copy, filters, 0, h_offset);
-        } else{
+        } else {
             for(j=0; j<copy.c; ++j) {
                 int w_offset = j*(ims[0].w+border);
                 image layer = get_image_layer(copy, j);
